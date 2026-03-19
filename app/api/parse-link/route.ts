@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { parseLink } from "@/lib/parseLink";
 import { verifyAdmin } from "@/lib/adminAuth";
