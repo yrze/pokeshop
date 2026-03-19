@@ -1,7 +1,15 @@
+import path from "path";
 import type { NextConfig } from "next";
+import { fileURLToPath } from "url";
+
+const projectDir = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  outputFileTracingRoot: projectDir,
+  turbopack: {
+    root: projectDir,
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "images.pokemontcg.io" },
