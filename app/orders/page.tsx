@@ -7,8 +7,6 @@ import { Search, Package, ChevronRight } from "lucide-react";
 
 interface OrderPreview {
   id: string;
-  name: string;
-  email: string;
   total: number;
   status: string;
   createdAt: string;
@@ -34,8 +32,11 @@ export default function OrdersPage() {
     setLoading(true);
     try {
       const res = await fetch(`/api/orders/lookup?email=${encodeURIComponent(email)}`);
+      if (!res.ok) {
+        throw new Error("Lookup failed");
+      }
       const data = await res.json();
-      setOrders(data);
+      setOrders(Array.isArray(data) ? data : []);
     } catch {
       setOrders([]);
     } finally {

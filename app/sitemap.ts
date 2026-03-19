@@ -1,22 +1,38 @@
 import { prisma } from "@/lib/prisma";
 import type { MetadataRoute } from "next";
 
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const cards = await prisma.card.findMany({
-    where: { published: true },
-    select: { id: true, updatedAt: true },
-  });
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL || "https://pokeshop.up.railway.app";
 
-  const cardUrls = cards.map((card) => ({
-    url: `${process.env.NEXT_PUBLIC_BASE_URL || "https://pokeshop.up.railway.app"}/cards/${card.id}`,
-    lastModified: card.updatedAt,
-  }));
+  try {
+    const cards = await prisma.card.findMany({
+      where: { published: true },
+      select: { id: true, updatedAt: true },
+    });
 
-  return [
-    {
-      url: process.env.NEXT_PUBLIC_BASE_URL || "https://pokeshop.up.railway.app",
-      lastModified: new Date(),
-    },
-    ...cardUrls,
-  ];
+    const cardUrls = cards.map((card) => ({
+      url: `${baseUrl}/cards/${card.id}`,
+      lastModified: card.updatedAt,
+    }));
+
+    return [
+      {
+        url: baseUrl,
+        lastModified: new Date(),
+      },
+      ...cardUrls,
+    ];
+  } catch (error) {
+    console.error("sitemap generation failed:", error);
+
+    return [
+      {
+        url: baseUrl,
+        lastModified: new Date(),
+      },
+    ];
+  }
 }

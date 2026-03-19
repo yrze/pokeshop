@@ -9,7 +9,9 @@ export async function GET(
 ) {
   const { id } = await params;
 
-  const card = await prisma.card.findUnique({ where: { id } });
+  const card = await prisma.card.findFirst({
+    where: { id, published: true },
+  });
   if (!card) {
     return NextResponse.json({ cards: [] });
   }

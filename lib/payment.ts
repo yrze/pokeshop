@@ -34,10 +34,27 @@ class StubPaymentProvider implements PaymentProvider {
   }
 }
 
+class DisabledPaymentProvider implements PaymentProvider {
+  async createCheckoutSession(): Promise<PaymentResult> {
+    return {
+      success: false,
+      transactionId: "",
+      error: "Checkout is temporarily unavailable",
+    };
+  }
+}
+
 export function getPaymentProvider(): PaymentProvider {
   // When ready for real payments:
   // if (process.env.STRIPE_SECRET_KEY) {
   //   return new StripePaymentProvider(process.env.STRIPE_SECRET_KEY);
   // }
-  return new StubPaymentProvider();
+  if (
+    process.env.NODE_ENV !== "production" ||
+    process.env.ALLOW_STUB_PAYMENTS === "true"
+  ) {
+    return new StubPaymentProvider();
+  }
+
+  return new DisabledPaymentProvider();
 }

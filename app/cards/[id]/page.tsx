@@ -30,13 +30,20 @@ export default function CardPage() {
 
   useEffect(() => {
     fetch(`/api/cards/${id}`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) {
+          return null;
+        }
+
+        return r.json();
+      })
       .then((data) => {
         setCard(data);
         if (data?.id) {
           addViewed({ id: data.id, name: data.name, imageUrl: data.imageUrl, price: data.price });
         }
       })
+      .catch(() => setCard(null))
       .finally(() => setLoading(false));
   }, [id, addViewed]);
 

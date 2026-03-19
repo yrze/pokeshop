@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
+import { hashAdminSessionToken } from "@/lib/adminSession";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 
@@ -31,7 +32,10 @@ function timingSafeCompare(a: string, b: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    "unknown";
 
   if (!checkLoginRateLimit(ip)) {
     return NextResponse.json(
@@ -40,7 +44,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { password } = await req.json();
+  let password: unknown;
+
+  try {
+    ({ password } = await req.json());
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
 
   if (!password || typeof password !== "string" || password.length > 200) {
     return NextResponse.json({ error: "Invalid password" }, { status: 401 });
@@ -58,7 +68,7 @@ export async function POST(req: NextRequest) {
   const expiresAt = new Date(Date.now() + 4 * 60 * 60 * 1000); // 4 hours (reduced from 24)
 
   await prisma.adminSession.create({
-    data: { token, expiresAt },
+    data: { token: hashAdminSessionToken(token), expiresAt },
   });
 
   // Clean up expired sessions periodically
@@ -84,7 +94,12 @@ export async function DELETE() {
   const token = cookieStore.get("admin_token")?.value;
 
   if (token) {
-    await prisma.adminSession.deleteMany({ where: { token } });
+    const hashedToken = hashAdminSessionToken(token);
+    await prisma.adminSession.deleteMany({
+      where: {
+        OR: [{ token: hashedToken }, { token }],
+      },
+    });
   }
 
   const response = NextResponse.json({ success: true });

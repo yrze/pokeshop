@@ -8,7 +8,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const card = await prisma.card.findUnique({ where: { id } });
+  const card = await prisma.card.findFirst({
+    where: { id, published: true },
+  });
   if (!card) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json(card);
 }

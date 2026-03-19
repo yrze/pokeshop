@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
           statusHistory: JSON.stringify([{ status: "pending", timestamp: new Date().toISOString() }]),
           items: { create: orderItems },
         },
-        include: { items: { include: { card: true } } },
+        select: { id: true },
       });
 
       // Decrement stock atomically within transaction
@@ -109,20 +109,27 @@ export async function POST(req: NextRequest) {
       return newOrder;
     });
 
-    return NextResponse.json(order, { status: 201 });
+    return NextResponse.json({ id: order.id }, { status: 201 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to create order";
-    // Only expose safe error messages
-    const safeMessages = ["Card not found", "Insufficient stock", "Payment failed", "Stock no longer available"];
+    const safeMessages = [
+      "Card not found",
+      "Insufficient stock",
+      "Payment failed",
+      "Stock no longer available",
+      "Checkout is temporarily unavailable",
+    ];
     const isSafe = safeMessages.some((m) => message.includes(m));
 
-    if (!isSafe && process.env.NODE_ENV !== "production") {
+    if (!isSafe) {
       console.error("orders POST error:", err);
     }
 
     return NextResponse.json(
       { error: isSafe ? message : "Failed to create order" },
-      { status: isSafe ? 400 : 500 }
+      {
+        status: message === "Checkout is temporarily unavailable" ? 503 : isSafe ? 400 : 500,
+      }
     );
   }
 }

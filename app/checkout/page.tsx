@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useCart } from "@/components/CartContext";
 import { useRouter } from "next/navigation";
@@ -16,9 +16,18 @@ export default function CheckoutPage() {
   const [success, setSuccess] = useState(false);
   const [orderId, setOrderId] = useState("");
 
+  useEffect(() => {
+    if (items.length === 0 && !success) {
+      router.push("/cart");
+    }
+  }, [items.length, router, success]);
+
   if (items.length === 0 && !success) {
-    router.push("/cart");
-    return null;
+    return (
+      <div className="max-w-lg mx-auto py-20 text-center text-sm text-gray-500 dark:text-gray-400">
+        Redirecting to your cart...
+      </div>
+    );
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
