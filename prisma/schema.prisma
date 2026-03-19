@@ -31,14 +31,25 @@ model Card {
 }
 
 model Order {
-  id        String      @id @default(cuid())
-  email     String
-  name      String
-  address   String
-  total     Float
-  status    String      @default("pending")
-  createdAt DateTime    @default(now())
-  items     OrderItem[]
+  id              String      @id @default(cuid())
+  email           String
+  name            String
+  address         String
+  total           Float
+  status          String      @default("pending")
+  statusHistory   String?
+  trackingNumber  String?
+  notes           String?
+  transactionId   String?
+  createdAt       DateTime    @default(now())
+  items           OrderItem[]
+}
+
+model AdminSession {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime
 }
 
 model OrderItem {

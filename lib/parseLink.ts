@@ -133,15 +133,58 @@ function extractTcgApiId(url: string): string | null {
   return null;
 }
 
+// Allowed domains for URL scraping (SSRF prevention)
+const ALLOWED_SCRAPE_DOMAINS = [
+  "bulbapedia.bulbagarden.net",
+  "www.tcgplayer.com",
+  "tcgplayer.com",
+  "www.cardmarket.com",
+  "cardmarket.com",
+  "api.pokemontcg.io",
+  "pokemontcg.io",
+  "www.pokemon.com",
+  "pokemon.com",
+  "pkmncards.com",
+  "www.pkmncards.com",
+];
+
+// Block private/internal IPs
+const BLOCKED_HOSTNAME_PATTERNS = [
+  /^localhost$/i,
+  /^127\./,
+  /^10\./,
+  /^172\.(1[6-9]|2[0-9]|3[01])\./,
+  /^192\.168\./,
+  /^169\.254\./,
+  /^0\./,
+  /^\[::1\]$/,
+  /^\[fd/i,
+  /^\[fe80:/i,
+];
+
+function isUrlAllowed(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return false;
+    if (BLOCKED_HOSTNAME_PATTERNS.some((p) => p.test(parsed.hostname))) return false;
+    if (ALLOWED_SCRAPE_DOMAINS.some((d) => parsed.hostname === d || parsed.hostname.endsWith(`.${d}`))) return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 async function scrapePageForCardName(url: string): Promise<string | null> {
+  if (!isUrlAllowed(url)) return null;
+
   try {
     const res = await fetch(url, {
       headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "User-Agent": "PokemonShop/1.0",
         Accept: "text/html,application/xhtml+xml",
       },
-      signal: AbortSignal.timeout(8000),
+      redirect: "manual", // Don't follow redirects to prevent SSRF via redirect
+      signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) return null;
     const html = await res.text();
@@ -173,6 +216,15 @@ async function scrapePageForCardName(url: string): Promise<string | null> {
 }
 
 export async function parseLink(url: string): Promise<ParsedCard | null> {
+  // Validate URL format
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+    if (BLOCKED_HOSTNAME_PATTERNS.some((p) => p.test(parsed.hostname))) return null;
+  } catch {
+    return null;
+  }
+
   // 1. Check if it's a direct Pokemon TCG API URL or contains a card ID
   const tcgId = extractTcgApiId(url);
   if (tcgId) {
