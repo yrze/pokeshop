@@ -4,6 +4,10 @@
     "builder": "DOCKERFILE"
   },
   "deploy": {
+    "startCommand": null,
+    "preDeployCommand": "node node_modules/prisma/build/index.js migrate deploy",
+    "healthcheckPath": "/api/health",
+    "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3
   }

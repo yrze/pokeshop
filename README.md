@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pokeshop
 
-## Getting Started
+Pokemon card shop built with Next.js 16, Prisma 7, and PostgreSQL.
 
-First, run the development server:
+## Local development
+
+Requirements:
+
+- Node.js 20+
+- PostgreSQL
+
+Install dependencies:
+
+```bash
+npm ci
+```
+
+Start the dev server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Important:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `prisma/schema.prisma` is configured for PostgreSQL only.
+- Your local `DATABASE_URL` must use a PostgreSQL connection string such as `postgresql://...`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment variables
 
-## Learn More
+Required:
 
-To learn more about Next.js, take a look at the following resources:
+- `DATABASE_URL`: PostgreSQL connection string
+- `ADMIN_PASSWORD`: password used for the admin area
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Recommended:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `NEXT_PUBLIC_BASE_URL`: public site URL used for sitemap links
 
-## Deploy on Vercel
+Optional:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `ALLOW_STUB_PAYMENTS=true`: only for non-production testing if you want the built-in stub checkout flow
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Railway deployment
+
+This repo is configured for Railway with a Dockerfile-based deploy.
+
+Deployment flow:
+
+1. Railway builds the image using [Dockerfile](./Dockerfile).
+2. Railway runs the pre-deploy command from [railway.json](./railway.json) to apply Prisma migrations.
+3. Railway starts the app using the Dockerfile `CMD` (`node server.js`).
+4. Railway health-checks [`/api/health`](./app/api/health/route.ts).
+
+Notes:
+
+- The app expects Railway to provide `DATABASE_URL` dynamically at runtime.
+- `startCommand` is explicitly set to `null` in `railway.json` so old dashboard overrides do not replace the Dockerfile startup command.
+- The production image uses Next.js standalone output.
+
+## Useful commands
+
+```bash
+npm run build
+npm run lint
+npm run db:deploy
+```
