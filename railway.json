@@ -5,7 +5,7 @@
   },
   "deploy": {
     "startCommand": null,
-    "preDeployCommand": "node node_modules/prisma/build/index.js migrate deploy",
+    "preDeployCommand": "npm run db:deploy",
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",

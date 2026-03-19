@@ -9,6 +9,14 @@ COPY prisma ./prisma/
 COPY prisma.config.ts ./
 RUN npm ci
 
+# Install production-only dependencies for the runtime image
+FROM base AS prod-deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY prisma ./prisma/
+COPY prisma.config.ts ./
+RUN npm ci --omit=dev
+
 # Build the app
 FROM base AS builder
 WORKDIR /app
@@ -27,12 +35,9 @@ RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/dotenv ./node_modules/dotenv
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 
 USER nextjs
 EXPOSE 3000
